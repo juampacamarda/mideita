@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Ideas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .ideas_aprobadas {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .seleccionadas p {
+            background-color: #e0e0e0;
+            padding: 5px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+    </style>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<body>
+
+    <h1>Generador de Ideas para Dibujar</h1>
+    <h3 id="idea"></h3>
+    <div id="animal-images"></div>
+    <div class="nav botonesIdeas">
+        <button onclick="generarIdea()" class="btn mx-2 btn-primary">Generar Idea</button>
+        <button onclick="guardarIdea()" class="btn mx-2 btn-success">Guardar Idea</button>
+        <button onclick="descartarIdea()" class="btn ml-auto btn-danger">Descartar Idea</button>
+    </div>
+    <div class="ideas_aprobadas mt-5">
+        <h5>Ya dibujaste</h5>
+        <small class="seleccionadas"></small>
+        <button onclick="borrarIdeas()" class="btn btn-success">Borrar Ideas Aprobadas</button>
+    </div>
+
+
+
+    <!-- Optional JavaScript -->
+    <script src="scriptsIDEAS.js"></script>
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  
+</body>
+</html>
