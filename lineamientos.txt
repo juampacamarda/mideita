@@ -1,0 +1,38 @@
+Lineamientos del Proyecto Final Del Bootcamp Frontend Moderno 
+Desarrolla un proyecto frontend usando React, Vue, o Angular, y demuestra lo que has aprendido en este curso.. 
+¿Por qué realizar el Proyecto? 
+El proyecto es requerimiento indispensable para culminar el Bootcamp y recibir tu certificado digital por haber concluido satisfactoriamente el programa; sin embargo, el beneficio más grande es el que traerá para tu carrera profesional. 
+El proyecto busca que comiences a construir un portafolio que puedas presentar al aplicar para empresas que busquen Frontends en las tecnologías que has aprendido. 
+Este proyecto es tu carta de presentación, es por esto que sugerimos que consideres los siguientes consejos. 
+● Plasma tu creatividad y personalidad, no hagas un proyecto genérico, haz uno que te distinga y por el que destaques en la revisión de perfiles para contratar. 
+● Elige un proyecto propio. Considera que para un mismo puesto se reciben muchas aplicaciones, y en muchas ocasiones los portafolios son muy similares porque son los mismos ejercicios. Aunque practicar con Frontend Mentor o usar APIs de pruebas es genial, un proyecto único te distinguirá de los demás aplicantes. 
+● Haz algo funcional, en lugar de un proyecto demo. Es importante practicar y hacer demos, nunca dejes de hacerlos, pero aprovecha este proyecto para ir más allá y hacer algo que tú quieras ver o usar. 
+● Considera dedicar tiempo a la documentación y a la legibilidad del código. 
+Acerca del proyecto 
+Desarrolla una aplicación con manejo de datos usando alguno de los principales frameworks de JavaScript 
+La aplicación deberá contar con las siguientes características indispensables: 
+● Deberá ser desarrollada con la arquitectura de componentes 
+● Deberá ser reactiva, y actualizar datos y la UI 
+● Deberá usar React, Vue, o Angular
+● Deberá contar con un manejador de estado 
+Opcionalmente puedes incluir: 
+● Conexión a una API pública 
+● Conexión a una base de datos en la nube, por ejemplo Firebase o Supabase ● Uso de Web APIs, por ejemplo, LocalStorage, Video, Audio, Canvas, etc. 
+Ejemplos de proyectos: 
+● Tablero Kanban 
+● Gestor de tareas diarias 
+● Galería de imágenes con votación de tus favoritas 
+● Receterio de comidas de tu país 
+● Entre otros 
+Notas 
+● Sobre el uso de IA, se recomienda el uso de copilotos, pero no recomendamos usar agentes, deberás ser capaz de entender el código generado. 
+● Recuerda elegir un proyecto retador que exija tus nuevos conocimientos y requiera que sigas investigando y aprendiendo. 
+● Apóyate en tus compañeros y profesores, postea tus dudas en el canal de Telegram. ● No importa si no cumples con todos los objetivos o requisitos, si al final no pudiste lograr tus objetivos, entrega todos los avances que tengas. 
+Entrega del proyecto. 
+El proyecto debe ser entregado funcionando en un servidor web, esto quiere decir que exista un link para visitarlo. 
+El código del proyecto debe ser subido a GitHub para que el equipo de evaluación de tutores pueda revisarlo. 
+El proyecto debe incluir un PDF de documentación que incluya: 
+● Información acerceseel equipo de evaluación. 
+● Instrucciones especiales para ejecutarlo si es que existan. 
+La fecha para entregar el proyecto será el: 5 de enero
+Recuerda que, si para la fecha de entrega no has logrado todos los objetivos que trazaste o que esperabas lograr, no te preocupes, entrega todos tu
