@@ -1,14 +1,50 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { db, auth } from './firebase'
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore'
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, orderBy, limit } from 'firebase/firestore'
 import { useAuthStore } from './authStore'
 
+// Tipos
+export interface StoredIdea {
+  id: string
+  idea: string
+  userId: string
+  userEmail: string
+  imageUrl?: string
+  createdAt: Date
+}
+
 const animales = [
-  "llama", "aguará guazú", "carpincho", "puma", "yaguareté", "guanaco", "tatú carreta", "huemul",
-  "vicuña", "zorrito de monte", "tapir", "monito de monte", "coendú", "ñandú", "mará", "zorro colorado",
-  "coatí", "margay", "ocelote", "paca", "cuis", "yacaré", "huillín", "hurón menor", "mulita",
-  "chinchillón", "lobito de río", "tucán", "cardenal amarillo", "ciervo de los pantanos"
+  { nombre: "llama", articulo: "Una", participio: "vestida" },
+  { nombre: "aguará guazú", articulo: "Un", participio: "vestido" },
+  { nombre: "carpincho", articulo: "Un", participio: "vestido" },
+  { nombre: "puma", articulo: "Un", participio: "vestido" },
+  { nombre: "yaguareté", articulo: "Un", participio: "vestido" },
+  { nombre: "guanaco", articulo: "Un", participio: "vestido" },
+  { nombre: "tatú carreta", articulo: "Un", participio: "vestido" },
+  { nombre: "huemul", articulo: "Un", participio: "vestido" },
+  { nombre: "vicuña", articulo: "Una", participio: "vestida" },
+  { nombre: "zorrito de monte", articulo: "Un", participio: "vestido" },
+  { nombre: "tapir", articulo: "Un", participio: "vestido" },
+  { nombre: "monito de monte", articulo: "Un", participio: "vestido" },
+  { nombre: "coendú", articulo: "Un", participio: "vestido" },
+  { nombre: "ñandú", articulo: "Un", participio: "vestido" },
+  { nombre: "mará", articulo: "Una", participio: "vestida" },
+  { nombre: "zorro colorado", articulo: "Un", participio: "vestido" },
+  { nombre: "coatí", articulo: "Un", participio: "vestido" },
+  { nombre: "margay", articulo: "Un", participio: "vestido" },
+  { nombre: "ocelote", articulo: "Un", participio: "vestido" },
+  { nombre: "paca", articulo: "Una", participio: "vestida" },
+  { nombre: "cuis", articulo: "Un", participio: "vestido" },
+  { nombre: "yacaré", articulo: "Un", participio: "vestido" },
+  { nombre: "huillín", articulo: "Un", participio: "vestido" },
+  { nombre: "hurón menor", articulo: "Un", participio: "vestido" },
+  { nombre: "mulita", articulo: "Una", participio: "vestida" },
+  { nombre: "chinchillón", articulo: "Un", participio: "vestido" },
+  { nombre: "lobito de río", articulo: "Un", participio: "vestido" },
+  { nombre: "tucán", articulo: "Un", participio: "vestido" },
+  { nombre: "cardenal amarillo", articulo: "Un", participio: "vestido" },
+  { nombre: "ciervo de los pantanos", articulo: "Un", participio: "vestido" }
 ]
 
 const caracterizaciones = [
@@ -29,69 +65,85 @@ const acciones = [
 ]
 
 // Modo desarrollo: cambiar a true para saltarse la restricción de 24h
-const SKIP_24H_RESTRICTION = false
+const SKIP_24H_RESTRICTION = true
 
 export const useIdeasStore = defineStore('ideas', () => {
+  // Estado para generación de ideas
   const currentIdea = ref<string>('')
-  const savedIdeas = ref<string[]>([])
   const usedCombinations = ref<Set<string>>(new Set())
   const ideaSaved = ref(true)
   const lastIdeaSaveTime = ref<number>(0)
-  const appState = ref<'initial' | 'generated' | 'thankYou' | 'myIdeas'>('initial')
+  const appState = ref<'initial' | 'generated' | 'thankYou' | 'myIdeas' | 'community'>('initial')
   const isListCollapsed = ref(true)
   const loading = ref(false)
   const lastSavedIdea = ref<string>('')
 
-  // Cargar ideas desde Firestore
-  const loadIdeasFromFirestore = async () => {
+  // Estado para mis ideas (del usuario actual)
+  const myIdeas = ref<StoredIdea[]>([])
+
+  // Estado para ideas de la comunidad (todas)
+  const communityIdeas = ref<StoredIdea[]>([])
+
+  // Query: Cargar MIS IDEAS (solo del usuario)
+  const loadMyIdeas = async () => {
     const authStore = useAuthStore()
     
-    if (!authStore.user) {
-      // Si no está logueado, cargar del localStorage como antes
-      loadIdeasFromLocalStorage()
-      return
-    }
+    if (!authStore.user) return
 
     try {
       loading.value = true
       const q = query(
         collection(db, 'ideas'),
-        where('userId', '==', authStore.user.uid)
+        where('userId', '==', authStore.user.uid),
+        orderBy('createdAt', 'desc')
       )
       const querySnapshot = await getDocs(q)
       
-      const ideas: string[] = []
-      let latestTime = 0
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data()
-        ideas.push(data.idea)
-        // Obtener el timestamp más reciente
-        if (data.createdAt && data.createdAt.toMillis() > latestTime) {
-          latestTime = data.createdAt.toMillis()
-        }
-      })
-
-      savedIdeas.value = ideas
-      if (latestTime > 0) {
-        lastIdeaSaveTime.value = latestTime
-      }
-      
-      checkIfCanGenerateNewIdea()
+      myIdeas.value = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as StoredIdea))
     } catch (error) {
-      console.error('Error cargando ideas:', error)
-      // En caso de error, cargar del localStorage como fallback
-      loadIdeasFromLocalStorage()
+      console.error('Error cargando mis ideas:', error)
     } finally {
       loading.value = false
     }
   }
 
-  // Cargar ideas del localStorage (fallback)
+  // Query: Cargar TODAS LAS IDEAS (comunidad)
+  const loadCommunityIdeas = async () => {
+    try {
+      loading.value = true
+      const q = query(
+        collection(db, 'ideas'),
+        orderBy('createdAt', 'desc'),
+        limit(50) // Limitar a las últimas 50 para performance
+      )
+      const querySnapshot = await getDocs(q)
+      
+      communityIdeas.value = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as StoredIdea))
+    } catch (error) {
+      console.error('Error cargando ideas de comunidad:', error)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Cargar mis ideas del localStorage (fallback)
   const loadIdeasFromLocalStorage = () => {
     const stored = localStorage.getItem('ideasAprobadas')
     if (stored) {
-      savedIdeas.value = JSON.parse(stored)
+      const ideas = JSON.parse(stored)
+      myIdeas.value = ideas.map((idea: string, index: number) => ({
+        id: `local_${index}`,
+        idea,
+        userId: 'local',
+        userEmail: 'local',
+        createdAt: new Date(localStorage.getItem('lastIdeaSaveTime') || Date.now())
+      }))
     }
     
     const savedTime = localStorage.getItem('lastIdeaSaveTime')
@@ -105,7 +157,6 @@ export const useIdeasStore = defineStore('ideas', () => {
   const checkIfCanGenerateNewIdea = () => {
     const authStore = useAuthStore()
     
-    // Los usuarios logueados pueden generar sin restricción
     if (authStore.isLoggedIn) {
       appState.value = 'initial'
       return
@@ -128,7 +179,7 @@ export const useIdeasStore = defineStore('ideas', () => {
     if (timeSinceLastIdea >= twentyFourHoursMs) {
       appState.value = 'initial'
     } else {
-      appState.value = 'initial' // Cambiar de 'waitingNextIdea' a 'initial'
+      appState.value = 'initial'
     }
   }
 
@@ -150,7 +201,7 @@ export const useIdeasStore = defineStore('ideas', () => {
   })
 
   const getRecentIdeas = computed(() => {
-    return savedIdeas.value.slice(-7).reverse()
+    return myIdeas.value.slice(-7).reverse()
   })
 
   const canGenerateNewIdea = computed(() => {
@@ -188,76 +239,144 @@ export const useIdeasStore = defineStore('ideas', () => {
       usedCombinations.value.clear()
     }
 
-    let newCombination: string
+    let newCombination = ''
     do {
-      const animal = animales[Math.floor(Math.random() * animales.length)]
+      const animalObj = animales[Math.floor(Math.random() * animales.length)]
       const caracterizacion = caracterizaciones[Math.floor(Math.random() * caracterizaciones.length)]
       const accion = acciones[Math.floor(Math.random() * acciones.length)]
-      newCombination = `Un ${animal} vestido de ${caracterizacion} ${accion}.`
-    } while (usedCombinations.value.has(newCombination))
+      
+      // Validar que todos los elementos existan
+      if (!animalObj || !caracterizacion || !accion) continue
+    
+      newCombination = `${animalObj.articulo} ${animalObj.nombre} ${animalObj.participio} de ${caracterizacion} ${accion}.`
+    } while (usedCombinations.value.has(newCombination) || newCombination === '')
 
     usedCombinations.value.add(newCombination)
     currentIdea.value = newCombination
     appState.value = 'generated'
   }
 
-  const saveIdea = async () => {
+  const saveIdea = async (imageUrl?: string) => {
     const authStore = useAuthStore()
     
     if (!currentIdea.value) return
 
-    // Limitar a 50 ideas máximo por usuario
-    if (savedIdeas.value.length >= 50) {
-      alert('Has alcanzado el límite de 50 ideas guardadas. Borra algunas para continuar.')
+    if (myIdeas.value.length >= 50) {
+      alert('Has alcanzado el límite de 50 ideas guardadas.')
       return
     }
 
-    // Validación
     const ideaTrimmed = currentIdea.value.trim()
-    if (ideaTrimmed.length < 5) {
-      alert('La idea debe tener al menos 5 caracteres')
-      return
-    }
-    if (ideaTrimmed.length > 200) {
-      alert('La idea no puede exceder 200 caracteres')
+    if (ideaTrimmed.length < 5 || ideaTrimmed.length > 200) {
+      alert('La idea debe tener entre 5 y 200 caracteres')
       return
     }
 
     try {
       loading.value = true
 
-      // Si está logueado, guardar en Firestore
-      if (authStore.user) {
-        await addDoc(collection(db, 'ideas'), {
-          idea: ideaTrimmed,
-          userId: authStore.user.uid,
-          userEmail: authStore.user.email,
-          createdAt: new Date()
-        })
+      // Guardar en Firestore (siempre, aunque sea guest)
+      const ideaData = {
+        idea: ideaTrimmed,
+        userId: authStore.user?.uid || 'guest',
+        userEmail: authStore.user?.email || 'guest@example.com',
+        imageUrl: imageUrl || null,
+        createdAt: new Date() // Firestore lo convierte automáticamente a Timestamp
       }
 
-      // También guardar en localStorage como backup
-      savedIdeas.value.push(ideaTrimmed)
-      lastIdeaSaveTime.value = Date.now()
-      localStorage.setItem('ideasAprobadas', JSON.stringify(savedIdeas.value))
-      localStorage.setItem('lastIdeaSaveTime', lastIdeaSaveTime.value.toString())
+      const docRef = await addDoc(collection(db, 'ideas'), ideaData)
 
-      // Guardar la idea en lastSavedIdea
+      // Actualizar lista de mis ideas
+      myIdeas.value.unshift({
+        id: docRef.id,
+        ...ideaData
+      } as StoredIdea)
+
+      // También guardar en localStorage
+      localStorage.setItem('lastIdeaSaveTime', Date.now().toString())
+      lastIdeaSaveTime.value = Date.now()
+
       lastSavedIdea.value = ideaTrimmed
-    
       ideaSaved.value = true
       appState.value = 'thankYou'
     } catch (error) {
       console.error('Error guardando idea:', error)
-      alert('Error al guardar la idea. Intenta de nuevo.')
+      alert('Error al guardar la idea.')
     } finally {
       loading.value = false
     }
   }
 
-  const goToMyIdeas = () => {
+  const goToMyIdeas = async () => {
+    await loadMyIdeas()
     appState.value = 'myIdeas'
   }
+
+  const goToCommunity = async () => {
+    await loadCommunityIdeas()
+    appState.value = 'community'
+  }
+
+  const deleteIdea = async (ideaId: string) => {
+    try {
+      await deleteDoc(doc(db, 'ideas', ideaId))
+      myIdeas.value = myIdeas.value.filter(idea => idea.id !== ideaId)
+    } catch (error) {
+      console.error('Error eliminando idea:', error)
+      alert('Error al eliminar la idea.')
+    }
+  }
+
+  // Cargar ideas desde Firestore
+  const loadIdeasFromFirestore = async () => {
+    const authStore = useAuthStore()
+    
+    if (!authStore.user) {
+      loadIdeasFromLocalStorage()
+      return
+    }
+
+    try {
+      loading.value = true
+      const q = query(
+        collection(db, 'ideas'),
+        where('userId', '==', authStore.user.uid),
+        orderBy('createdAt', 'desc')
+      )
+      const querySnapshot = await getDocs(q)
+      
+      let latestTime = 0
+      
+      // Mapear directamente a StoredIdea[]
+      myIdeas.value = querySnapshot.docs.map(doc => {
+        const data = doc.data()
+        if (data.createdAt && data.createdAt.toMillis() > latestTime) {
+          latestTime = data.createdAt.toMillis()
+        }
+        return {
+          id: doc.id,
+          idea: data.idea,
+          userId: data.userId,
+          userEmail: data.userEmail,
+          imageUrl: data.imageUrl,
+          createdAt: data.createdAt.toDate()
+        } as StoredIdea
+      })
+      
+      if (latestTime > 0) {
+        lastIdeaSaveTime.value = latestTime
+      }
+      
+      checkIfCanGenerateNewIdea()
+    } catch (error) {
+      console.error('Error cargando ideas:', error)
+      loadIdeasFromLocalStorage()
+    } finally {
+      loading.value = false
+    }
+  }
+
+  loadIdeasFromLocalStorage()
 
   const discardIdea = () => {
     currentIdea.value = ''
@@ -265,6 +384,7 @@ export const useIdeasStore = defineStore('ideas', () => {
     appState.value = 'initial'
   }
 
+  // Agregar esta función antes del return
   const clearIdeas = async () => {
     const authStore = useAuthStore()
     
@@ -286,14 +406,14 @@ export const useIdeasStore = defineStore('ideas', () => {
         }
       }
 
-      // Limpiar localStorage
-      savedIdeas.value = []
+      // Limpiar myIdeas
+      myIdeas.value = []
       localStorage.removeItem('ideasAprobadas')
       localStorage.removeItem('lastIdeaSaveTime')
       lastIdeaSaveTime.value = 0
     } catch (error) {
       console.error('Error borrando ideas:', error)
-      alert('Error al borrar las ideas. Intenta de nuevo.')
+      alert('Error al borrar las ideas.')
     } finally {
       loading.value = false
     }
@@ -303,27 +423,37 @@ export const useIdeasStore = defineStore('ideas', () => {
     isListCollapsed.value = !isListCollapsed.value
   }
 
-  loadIdeasFromLocalStorage()
-
   return {
-    currentIdea,
-    savedIdeas,
-    ideaSaved,
-    appState,
-    isListCollapsed,
-    loading,
-    lastIdeaSaveTime,
-    lastSavedIdea,
-    canGenerateNewIdea,
-    getTimeUntilNextIdea,
-    getRecentIdeas,
-    generateIdea,
-    saveIdea,
-    discardIdea,
-    clearIdeas,
-    goToMyIdeas,
-    toggleListCollapse,
-    loadIdeasFromFirestore,
-    loadIdeasFromLocalStorage,
-  }
+  // Estado - Generación
+  currentIdea,
+  ideaSaved,
+  appState,
+  loading,
+  lastSavedIdea,
+  isListCollapsed,
+  lastIdeaSaveTime,
+  
+  // Estado - Computed (esto elimina los warnings)
+  canGenerateNewIdea,
+  getTimeUntilNextIdea,
+  getRecentIdeas,
+  
+  // Estado - Datos
+  myIdeas,
+  communityIdeas,
+  
+  // Métodos
+  generateIdea,
+  saveIdea,
+  loadMyIdeas,
+  loadCommunityIdeas,
+  loadIdeasFromFirestore,  // ← Esto elimina el warning
+  loadIdeasFromLocalStorage,
+  goToMyIdeas,
+  goToCommunity,
+  deleteIdea,
+  discardIdea,
+  clearIdeas,
+  toggleListCollapse,
+}
 })

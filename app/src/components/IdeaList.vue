@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { StoredIdea } from '../stores/ideaStore'
 
 interface Props {
-  ideas: string[]
+  ideas: StoredIdea[]  // ← Cambiar de string[] a StoredIdea[]
   maxDisplay?: number        // Cuántas ideas mostrar por página
   showDelete?: boolean       // Mostrar botón de borrar individual
   showBulkDelete?: boolean   // Mostrar checkbox para selección múltiple
@@ -90,7 +91,7 @@ const deleteSelected = () => {
           </div>
 
           <!-- Texto de la idea -->
-          <span class="flex-grow-1">{{ idea }}</span>
+          <span class="flex-grow-1">{{ idea.idea }}</span>
 
           <!-- Botón de borrar individual -->
           <button 

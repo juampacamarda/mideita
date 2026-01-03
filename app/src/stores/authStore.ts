@@ -2,10 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { auth } from './firebase'
 import { 
-  signInWithPopup, 
+  signInWithRedirect,  // ← Cambiar de signInWithPopup
   GoogleAuthProvider, 
   signOut, 
   onAuthStateChanged,
+  getRedirectResult,    // ← Agregar
   type User
 } from 'firebase/auth'
 import { useIdeasStore } from './ideaStore'
@@ -15,13 +16,11 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // Detectar si el usuario ya está logueado
   const initializeAuth = () => {
     return new Promise((resolve) => {
       onAuthStateChanged(auth, async (currentUser) => {
         user.value = currentUser
         
-        // Si hay usuario logueado, cargar sus ideas desde Firestore
         if (currentUser) {
           const ideasStore = useIdeasStore()
           await ideasStore.loadIdeasFromFirestore()
@@ -41,14 +40,9 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
       const provider = new GoogleAuthProvider()
-      const result = await signInWithPopup(auth, provider)
-      user.value = result.user
+      await signInWithRedirect(auth, provider)  // ← Cambiar aquí
       
-      // Cargar ideas del usuario desde Firestore
-      const ideasStore = useIdeasStore()
-      await ideasStore.loadIdeasFromFirestore()
-      
-      return result.user
+      // El usuario será redirigido y vuelto, no necesita await
     } catch (err: any) {
       error.value = err.message
       throw err
@@ -64,7 +58,6 @@ export const useAuthStore = defineStore('auth', () => {
       await signOut(auth)
       user.value = null
       
-      // Al cerrar sesión, recargar desde localStorage
       const ideasStore = useIdeasStore()
       ideasStore.loadIdeasFromLocalStorage()
     } catch (err: any) {
@@ -75,7 +68,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Inicializar la autenticación cuando se carga la app
   initializeAuth()
 
   return {
