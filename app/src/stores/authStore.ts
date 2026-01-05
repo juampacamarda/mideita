@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { auth } from './firebase'
 import { 
-  signInWithRedirect,
+  
   signInWithPopup,
   GoogleAuthProvider, 
   signOut, 
@@ -68,9 +68,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const loginWithGoogle = async () => {
     try {
-      console.log('🔑 LOGIN con Google...')
       loading.value = true
-      error.value = null
+      console.log('🔵 Iniciando login con Google (popup)...')
       
       const provider = new GoogleAuthProvider()
       provider.setCustomParameters({
@@ -79,21 +78,14 @@ export const useAuthStore = defineStore('auth', () => {
       provider.addScope('email')
       provider.addScope('profile')
       
-      // Usar popup en desarrollo
-      if (window.location.hostname === 'localhost') {
-        console.log('🚀 Usando popup...')
-        const result = await signInWithPopup(auth, provider)
-        if (result.user) {
-          console.log('✅ Login exitoso:', result.user.email)
-        }
-      } else {
-        console.log('🚀 Usando redirect...')
-        await signInWithRedirect(auth, provider)
-      }
+      const result = await signInWithPopup(auth, provider)
       
-    } catch (err: any) {
-      console.error('❌ Error login:', err.message)
-      error.value = err.message
+      console.log('✅ Login exitoso:', result.user.email)
+      user.value = result.user
+    } catch (error: any) {
+      console.error('❌ Error en login:', error.message)
+      alert('Error al iniciar sesión: ' + error.message)
+    } finally {
       loading.value = false
     }
   }

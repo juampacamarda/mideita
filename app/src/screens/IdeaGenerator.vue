@@ -22,23 +22,10 @@ const handleSaveIdea = async () => {
   await ideaStore.saveIdea()
 }
 
-const handleLogin = async () => {
-  try {
-    await authStore.loginWithGoogle()
-  } catch (error) {
-    console.error('Error en login:', error)
-  }
-}
 
 
 
-const handleThankYouButton = async () => {
-  if (authStore.isLoggedIn) {
-    ideaStore.goToMyIdeas()
-  } else {
-    await handleLogin()
-  }
-}
+
 
 const goBack = () => {
   if (ideaStore.appState === 'thankYou') {
