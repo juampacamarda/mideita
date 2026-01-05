@@ -36,6 +36,7 @@
 
 ## 📁 Estructura del proyecto
 
+
 app/
 ├── src/
 │ ├── components/ # Componentes reutilizables
