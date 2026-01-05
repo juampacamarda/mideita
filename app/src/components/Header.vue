@@ -252,6 +252,12 @@ watch(() => authStore.isLoggedIn, async (isLoggedIn) => {
   color: #d32f2f;
 }
 
+.nav-link:hover,
+a.router-link-active.nav-link {
+    color: #397397;
+    font-weight: 700;
+}
+
 @media (min-width: 991px) {
   .navbar-expand-lg .navbar-nav .dropdown-menu {
     right: unset !important;

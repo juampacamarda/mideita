@@ -269,6 +269,12 @@ npm run build
 firebase deploy
 ```
 
+### URL de producción (Firebase Hosting)
+- Producción: https://mideita.web.app
+- Alternativa: https://mideita.firebaseapp.com
+
+Estas URLs corresponden al `PROJECT_ID` configurado en `app/.firebaserc` (`mideita`). Si cambias el proyecto, actualiza `app/.firebaserc` o sustituye el `PROJECT_ID` en estas URLs.
+
 ### Cloud Functions (limpieza noctáut)
 ```bash
 firebase deploy --only functions
