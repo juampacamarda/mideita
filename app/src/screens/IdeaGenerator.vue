@@ -395,6 +395,10 @@ const resetUploadSuccess = () => {
   cursor: not-allowed;
 }
 
+.ideaGenerated{
+    max-width: 90%;
+}
+
 @media (max-width: 767px) {
   .btn{
     width: 100%!important;
