@@ -29,7 +29,7 @@ const goBack = () => {
             <i class="fas fa-arrow-left"></i> 
             <span class="d-none d-md-block">Atrás</span>
           </button>
-          <h2 class="mb-0"><i class="fas fa-images"></i> Ideas de la comunidad</h2>
+          <h2 class="mb-0 text-center d-block" style="width: 84%;"><i class="fas fa-images"></i> Ideas de la comunidad</h2>
         </div>
 
         <!-- Componente de galería reutilizable -->

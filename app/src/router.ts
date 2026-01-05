@@ -3,12 +3,18 @@ import IdeaGenerator from './screens/IdeaGenerator.vue'
 import UserGallery from './screens/UserGallery.vue'
 import GlobalGallery from './screens/GlobalGallery.vue'
 import UserIdeaList from './screens/UserIdeaList.vue'
+import About from './screens/AboutIdeita.vue'
 
 const routes = [
   {
     path: '/',
     component: IdeaGenerator,
     name: 'Home'
+  },
+  {
+    path: '/about',
+    component: About,
+    name: 'About'
   },
   {
     path: '/comunidad',

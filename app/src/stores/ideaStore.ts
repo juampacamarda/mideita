@@ -365,16 +365,6 @@ export const useIdeasStore = defineStore('ideas', () => {
     appState.value = 'community'
   }
 
-  const deleteIdea = async (ideaId: string) => {
-    try {
-      await deleteDoc(doc(db, 'ideas', ideaId))
-      myIdeas.value = myIdeas.value.filter(idea => idea.id !== ideaId)
-    } catch (error) {
-      console.error('Error eliminando idea:', error)
-      alert('Error al eliminar la idea.')
-    }
-  }
-
   // Cargar ideas desde Firestore
   const loadIdeasFromFirestore = async () => {
     const { useAuthStore } = await import('./authStore')
@@ -475,6 +465,7 @@ export const useIdeasStore = defineStore('ideas', () => {
     isListCollapsed.value = !isListCollapsed.value
   }
 
+  // SECCIÓN 1: Actualizar uploadIdeaWithImage para agregar tag con ideaId
   const uploadIdeaWithImage = async (file: File): Promise<boolean> => {
     const { useAuthStore } = await import('./authStore')
     const authStore = useAuthStore()
@@ -501,10 +492,12 @@ export const useIdeasStore = defineStore('ideas', () => {
         return false
       }
 
-      // 1. Subir imagen a Cloudinary
+      // 1. Subir imagen a Cloudinary CON TAG del ideaId
       const formData = new FormData()
       formData.append('file', file)
       formData.append('upload_preset', 'mideita_upload')
+      // Tag con el ideaId para identificar y limpiar después
+      formData.append('tags', `idea_${ideaToUpdate?.id}`)
 
       const response = await fetch(
         'https://api.cloudinary.com/v1_1/dvfrbmxor/image/upload',
@@ -540,6 +533,30 @@ export const useIdeasStore = defineStore('ideas', () => {
       return false
     } finally {
       loading.value = false
+    }
+  }
+
+  // SECCIÓN 2: Actualizar deleteIdea para usar tags
+  const deleteIdea = async (ideaId: string) => {
+    try {
+      // 1. Obtener la idea para obtener el ideaId
+      const ideaToDelete = myIdeas.value.find(idea => idea.id === ideaId)
+      
+      // 2. Si tiene imagen, registrar para limpieza posterior
+      if (ideaToDelete?.imageUrl) {
+        console.log(`🗑️ Imagen marcada para limpieza (tag: idea_${ideaId})`)
+        // La Cloud Function de Firebase se encargará de eliminar
+        // todas las imágenes etiquetadas con idea_${ideaId} de Cloudinary
+      }
+      
+      // 3. Borrar la idea de Firestore
+      await deleteDoc(doc(db, 'ideas', ideaId))
+      myIdeas.value = myIdeas.value.filter(idea => idea.id !== ideaId)
+      
+      console.log('✅ Idea eliminada correctamente (imagen se limpiará en 24h)')
+    } catch (error) {
+      console.error('❌ Error eliminando idea:', error)
+      alert('Error al eliminar la idea.')
     }
   }
 

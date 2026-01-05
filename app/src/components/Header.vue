@@ -72,7 +72,7 @@ watch(() => authStore.isLoggedIn, async (isLoggedIn) => {
               <RouterLink to="/" class="nav-link">Home</RouterLink>
             </li>
             <li class="nav-item">
-              <a href="#" class="nav-link" @click.prevent>Qué es Mideita</a>
+            <RouterLink to="/about" class="nav-link">Qué es Mideita</RouterLink>
             </li>
             <li class="nav-item">
               <RouterLink to="/comunidad" class="nav-link">Explorar Ideas</RouterLink>
@@ -145,7 +145,9 @@ watch(() => authStore.isLoggedIn, async (isLoggedIn) => {
 </template>
 
 <style scoped>
-
+.dropdown-toggle::after{
+  display:none;
+}
 #ideaHeader {
   background-color: #fff;
   border-bottom: 1px solid #ddd;
@@ -248,5 +250,12 @@ watch(() => authStore.isLoggedIn, async (isLoggedIn) => {
 
 .text-danger {
   color: #d32f2f;
+}
+
+@media (min-width: 991px) {
+  .navbar-expand-lg .navbar-nav .dropdown-menu {
+    right: unset !important;
+    left: -50px!important;
+  }
 }
 </style>
