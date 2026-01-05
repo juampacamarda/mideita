@@ -2,8 +2,9 @@
 import { ref } from 'vue'
 import { useIdeasStore } from '../stores/ideaStore'
 import { useAuthStore } from '../stores/authStore'
-import IdeaList from './IdeaList.vue'
-import ImageReferenceModal from './ImageReferenceModal.vue'
+import IdeaList from '../components/IdeaList.vue'
+import ImageReferenceModal from '../components/ImageReferenceModal.vue'
+import IdeaUploadModal from '../components/IdeaUploadModal.vue'
 
 const ideaStore = useIdeasStore()
 const authStore = useAuthStore()
@@ -29,13 +30,7 @@ const handleLogin = async () => {
   }
 }
 
-const handleUploadIdea = () => {
-  if (!authStore.isLoggedIn) {
-    alert('Debes iniciar sesión para subir ideas')
-    return
-  }
-  console.log('Subiendo idea...')
-}
+
 
 const handleThankYouButton = async () => {
   if (authStore.isLoggedIn) {
@@ -116,6 +111,21 @@ const extractAccion = (idea: string) => {
   // No quitar el último elemento (-1), solo eliminar el punto
   return parts.slice(accionStart).join(' ').replace('.', '')
 }
+
+const showUploadModal = ref(false)
+const uploadSuccess = ref(false)
+
+const handleUploadIdea = async (file: File) => {
+  const success = await ideaStore.uploadIdeaWithImage(file)
+  if (success) {
+    showUploadModal.value = false
+    uploadSuccess.value = true
+  }
+}
+
+const resetUploadSuccess = () => {
+  uploadSuccess.value = false
+}
 </script>
 
 <template>
@@ -131,21 +141,23 @@ const extractAccion = (idea: string) => {
           </div>
 
           <button 
-            class="btn btn-lg rounded-pill text-white"
+            class="btn text-white btn-principalIdeaBtn"
             style="background-color: #FF9500; border: none; padding: 12px 30px; font-size: 18px;"
             @click="() => ideaStore.generateIdea(false)"
             :disabled="!authStore.isLoggedIn && ideaStore.lastIdeaSaveTime > 0 && !ideaStore.canGenerateNewIdea"
           >
-            💡 Generar idea
+            <img src="../assets/llamita02.png" alt="" class="img-fluid">
+            <span> Generar idea </span>
           </button>
 
           <div v-if="ideaStore.getRecentIdeas.length > 0" class="w-100">
+            <hr>
             <button 
-              class="btn btn-link text-dark text-decoration-none d-inline-flex align-items-center gap-2 mb-3"
+              class="btn btn-link text-dark text-decoration-none d-inline-flex justify-content-center align-items-center gap-2 mb-3"
               @click="ideaStore.toggleListCollapse"
             >
-              <span>🔒 Ideas Guardadas</span>
-              <span>{{ ideaStore.isListCollapsed ? '▼' : '▲' }}</span>
+              <span><i class="fas fa-save"></i> Ideas Guardadas</span>
+              <i :class="ideaStore.isListCollapsed ? 'fas fa-chevron-down' : 'fas fa-chevron-up'"></i>
             </button>
 
             <div v-if="!ideaStore.isListCollapsed" class="mb-4">
@@ -158,7 +170,7 @@ const extractAccion = (idea: string) => {
                 class="btn btn-sm btn-outline-danger rounded-pill mt-3"
                 @click="ideaStore.clearIdeas"
               >
-                🗑️ Borrar ideas
+                <i class="fas fa-trash"></i> Borrar ideas
               </button>
             </div>
           </div>
@@ -166,32 +178,33 @@ const extractAccion = (idea: string) => {
 
         <!-- PASO 02: Idea generada - Idea + Botones + Referencias -->
         <div v-else-if="ideaStore.appState === 'generated'" class="text-center">
-          <div class="suggestedIdead d-flex justify-content-between align-items-start flex wrap">
-            <h2 class="mb-4 mr-2">{{ ideaStore.currentIdea || ideaStore.lastSavedIdea }}</h2>
+          <div class="suggestedIdead d-flex justify-content-between align-items-start flex-wrap">
+            <h2 class="mb-4 ideaGenerated mr-2">{{ ideaStore.currentIdea || ideaStore.lastSavedIdea }}</h2>
           
             <button 
-              class="btn btn-sm rounded-pill mb-4"
+              class="btn btn-sm regeneratebtn rounded-pill mb-4"
               style="background-color: #FF9500; color: white; border: none; padding: 8px 12px;"
               @click="regenerateIdea()"
             >
-              🔄
+              <i class="fa-solid fa-arrow-rotate-right"></i>
             </button>
           </div>
 
-          <div class="d-flex justify-content-center gap-3 mt-4">
+          <div class="d-flex justify-content-center flex-wrap gap-3 mt-4">
             <button 
-              class="btn btn-danger rounded-pill"
+              class="btn btn-danger"
               @click="ideaStore.discardIdea"
             >
-              Descartar idea
+              <i class="fas fa-times"></i> Descartar idea
             </button>
             <button 
-              class="btn rounded-pill text-white"
+              class="btn text-white"
               style="background-color: #1DB5A0;"
               @click="handleSaveIdea"
               :disabled="ideaStore.loading"
             >
-              {{ ideaStore.loading ? '⏳ Guardando...' : 'Elegir idea' }}
+              <i class="fas fa-check"></i>
+              {{ ideaStore.loading ? 'Guardando...' : 'Elegir idea' }}
             </button>
           </div>
         </div>
@@ -205,7 +218,7 @@ const extractAccion = (idea: string) => {
             >
               ✓
             </div>
-            <p class="mb-0 idea-text" style="font-size: 18px; max-width: 500px;">
+            <p class="mb-0 idea-text" style="font-size: 18px; max-width: 800px;">
               <!-- Animal -->
               <span 
                 class="idea-part"
@@ -250,57 +263,84 @@ const extractAccion = (idea: string) => {
             <p style="color: #666; margin: 0;">Gracias por elegir esta idea, mañana podrás venir a buscar otra!</p>
           </div>
 
-          <div class="d-flex gap-3 mt-4">
+          <div class="d-flex gap-3 flex-wrap mt-4">
             <button 
-              class="btn btn-lg rounded-pill text-white"
+              class="btn btn-lg text-white"
               style="background-color: #1DB5A0; border: none; padding: 12px 30px; font-size: 18px;"
               @click="ideaStore.goToMyIdeas"
             >
-              ↗️ Ver ideas guardadas
+              <i class="fas fa-arrow-up-right-from-square"></i> Ver ideas guardadas
             </button>
             <button 
-              class="btn btn-lg rounded-pill text-white"
+              class="btn btn-lg text-white"
               style="background-color: #ccc; border: none; padding: 12px 30px; font-size: 18px;"
               @click="goBack"
             >
-              ← Atrás
+              <i class="fas fa-arrow-left"></i> Atrás
             </button>
           </div>
         </div>
 
-        <!-- PASO 04: Mis ideas - Últimas 7 ideas + Upload -->
+        <!-- PASO 04: Mis ideas -->
         <div v-else-if="ideaStore.appState === 'myIdeas'" class="text-center">
-          <h3 class="mb-4">🔒 Ideas Guardadas</h3>
+          <h3 class="mb-4"><i class="fas fa-save"></i> Ideas Guardadas</h3>
 
-          <div v-if="ideaStore.getRecentIdeas.length > 0" class="mb-4">
+          <div v-if="ideaStore.myIdeas.length > 0" class="mb-4">
             <IdeaList 
-              :ideas="ideaStore.getRecentIdeas"
+              :ideas="ideaStore.myIdeas"
               :max-display="5"
               :show-pagination="true"
             />
           </div>
 
-          <p v-if="!authStore.isLoggedIn" class="text-muted mb-4">{{ ideaStore.getTimeUntilNextIdea }}</p>
+          <!-- Mensaje de éxito después de subir imagen -->
+          <div v-if="uploadSuccess" class="alert alert-success d-flex justify-content-between align-items-center mt-4">
+            <div>
+              <strong>✓ ¡Imagen subida correctamente!</strong>
+              <p class="mb-0 mt-2">Tu idea con imagen ya está guardada.</p>
+              <button 
+                class="btn btn-sm btn-success mt-3"
+                @click="resetUploadSuccess"
+              >
+                <i class="fas-fa-image"></i> Ver mis imágenes subidas
+              </button>
+            </div>
+            <button 
+              class="btn btn-sm btn-outline-success"
+              @click="resetUploadSuccess"
+            >
+              <i class="fas fa-time"></i>
+            </button>
+          </div>
 
-          <div class="d-flex gap-3 justify-content-center mt-4">
+          <!-- Botones: mostrar solo si NO hay mensaje de éxito -->
+          <div v-if="!uploadSuccess" class="d-flex flex-wrap gap-3 justify-content-center mt-4">
             <button 
               v-if="authStore.isLoggedIn"
               class="btn btn-lg rounded-pill text-white"
               style="background-color: #FF9500; border: none; padding: 12px 30px; font-size: 18px;"
-              @click="handleUploadIdea"
+              @click="showUploadModal = true"
               :disabled="ideaStore.loading"
             >
               {{ ideaStore.loading ? '⏳ Subiendo...' : '📤 Subir idea' }}
             </button>
 
             <button 
-              class="btn btn-lg rounded-pill text-white"
+              class="btn btn-lg text-white"
               style="background-color: #ccc; border: none; padding: 12px 30px; font-size: 18px;"
               @click="goBack"
             >
-              ← Atrás
+              <i class="fas fa-arrow-left"></i> Atrás
             </button>
           </div>
+
+          <!-- Modal de upload -->
+          <IdeaUploadModal
+            :show="showUploadModal"
+            :idea="ideaStore.lastSavedIdea"
+            @upload="handleUploadIdea"
+            @close="showUploadModal = false"
+          />
         </div>
 
       </div>
@@ -309,6 +349,47 @@ const extractAccion = (idea: string) => {
 </template>
 
 <style scoped>
+
+.btn.btn-principalIdeaBtn{
+  font-size: 42px!important;
+  padding: 20px 100px!important;
+  border-radius: 15px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  transition: all 0.3s ease;
+}
+
+.btn-principalIdeaBtn:hover{
+  box-shadow: 0px 50px 15px -20px #FF9500;
+  transform: translateY(-3px);
+  background-color: #fff!important;
+  color: #71bae8!important;
+}
+
+.btn-principalIdeaBtn img{
+  height: 70px;
+  margin: 0 10px;
+  transition: all 0.3s ease;
+}
+
+.btn-principalIdeaBtn:hover img{
+  filter: drop-shadow(0 0 5px rgba(255, 149, 0, 0.7));
+  height: 90px;
+}
+
+/*  */
+.btn{
+ font-size: 18px!important;
+ font-weight: 600!important; 
+ letter-spacing: 1px!important;
+}
+
+/*  */
+
 .idea-part {
   font-weight: bold;
   color: #FF9500;
@@ -325,5 +406,36 @@ const extractAccion = (idea: string) => {
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+  .btn{
+    width: 100%!important;
+  }
+
+  .btn.btn-principalIdeaBtn{
+    font-size: 32px!important;
+    padding: 15px 30px!important;
+    max-width: 80%!important;
+  }
+
+  .btn-principalIdeaBtn img{
+  height: 170px;
+  margin-bottom: 20px;
+  }
+
+  .btn.regeneratebtn{
+    width: 40px!important;
+    height: 40px!important;
+    font: 10px!important;
+    padding: 0!important;
+    display: block;
+  }
+
+  .ideaGenerated{
+    max-width: 80%;
+    font-size: 18px;
+  }
+
 }
 </style>

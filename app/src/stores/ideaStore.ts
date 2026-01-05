@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { db, auth } from './firebase'
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc, orderBy, limit } from 'firebase/firestore'
-import { useAuthStore } from './authStore'
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, orderBy, limit, updateDoc } from 'firebase/firestore'
+// REMOVER ESTA LÍNEA: import { useAuthStore } from './authStore'
 
 // Tipos
 export interface StoredIdea {
@@ -73,10 +73,11 @@ export const useIdeasStore = defineStore('ideas', () => {
   const usedCombinations = ref<Set<string>>(new Set())
   const ideaSaved = ref(true)
   const lastIdeaSaveTime = ref<number>(0)
-  const appState = ref<'initial' | 'generated' | 'thankYou' | 'myIdeas' | 'community'>('initial')
+  const appState = ref<'initial' | 'generated' | 'thankYou' | 'myIdeas' | 'community' | 'userGallery'>('initial')
   const isListCollapsed = ref(true)
   const loading = ref(false)
   const lastSavedIdea = ref<string>('')
+  const ideasGeneratedToday = ref<number>(0)
 
   // Estado para mis ideas (del usuario actual)
   const myIdeas = ref<StoredIdea[]>([])
@@ -84,8 +85,30 @@ export const useIdeasStore = defineStore('ideas', () => {
   // Estado para ideas de la comunidad (todas)
   const communityIdeas = ref<StoredIdea[]>([])
 
+  // Cargar contador de ideas del día
+  const loadDailyIdeasCount = () => {
+    const today = new Date().toDateString()
+    const stored = localStorage.getItem('ideasGeneratedToday')
+    const storedDate = localStorage.getItem('ideasGeneratedTodayDate')
+    
+    if (storedDate === today) {
+      ideasGeneratedToday.value = parseInt(stored || '0')
+    } else {
+      // Nuevo día: reiniciar contador
+      ideasGeneratedToday.value = 0
+      localStorage.setItem('ideasGeneratedTodayDate', today)
+      localStorage.setItem('ideasGeneratedToday', '0')
+    }
+  }
+
+  const incrementDailyIdeasCount = () => {
+    ideasGeneratedToday.value++
+    localStorage.setItem('ideasGeneratedToday', ideasGeneratedToday.value.toString())
+  }
+
   // Query: Cargar MIS IDEAS (solo del usuario)
   const loadMyIdeas = async () => {
+    const { useAuthStore } = await import('./authStore')
     const authStore = useAuthStore()
     
     if (!authStore.user) return
@@ -134,6 +157,8 @@ export const useIdeasStore = defineStore('ideas', () => {
 
   // Cargar mis ideas del localStorage (fallback)
   const loadIdeasFromLocalStorage = () => {
+    loadDailyIdeasCount()
+    
     const stored = localStorage.getItem('ideasAprobadas')
     if (stored) {
       const ideas = JSON.parse(stored)
@@ -154,7 +179,8 @@ export const useIdeasStore = defineStore('ideas', () => {
     checkIfCanGenerateNewIdea()
   }
 
-  const checkIfCanGenerateNewIdea = () => {
+  const checkIfCanGenerateNewIdea = async () => {
+    const { useAuthStore } = await import('./authStore')
     const authStore = useAuthStore()
     
     if (authStore.isLoggedIn) {
@@ -205,11 +231,12 @@ export const useIdeasStore = defineStore('ideas', () => {
   })
 
   const canGenerateNewIdea = computed(() => {
-    const authStore = useAuthStore()
+    // No podemos usar authStore aquí porque es síncrono, usar auth directamente
+    const currentUser = auth.currentUser
     
-    // Los usuarios logueados siempre pueden generar
-    if (authStore.isLoggedIn) {
-      return true
+    // Los usuarios logueados siempre pueden generar (hasta el límite diario)
+    if (currentUser) {
+      return ideasGeneratedToday.value < 10
     }
     
     if (lastIdeaSaveTime.value === 0) return true
@@ -257,9 +284,16 @@ export const useIdeasStore = defineStore('ideas', () => {
   }
 
   const saveIdea = async (imageUrl?: string) => {
+    const { useAuthStore } = await import('./authStore')
     const authStore = useAuthStore()
     
     if (!currentIdea.value) return
+
+    // Límite de ideas por día para logueados
+    if (authStore.isLoggedIn && ideasGeneratedToday.value >= 10) {
+      alert('Has alcanzado el límite de 10 ideas por día. Intenta mañana.')
+      return
+    }
 
     if (myIdeas.value.length >= 50) {
       alert('Has alcanzado el límite de 50 ideas guardadas.')
@@ -275,24 +309,38 @@ export const useIdeasStore = defineStore('ideas', () => {
     try {
       loading.value = true
 
-      // Guardar en Firestore (siempre, aunque sea guest)
       const ideaData = {
         idea: ideaTrimmed,
         userId: authStore.user?.uid || 'guest',
         userEmail: authStore.user?.email || 'guest@example.com',
         imageUrl: imageUrl || null,
-        createdAt: new Date() // Firestore lo convierte automáticamente a Timestamp
+        createdAt: new Date()
       }
 
-      const docRef = await addDoc(collection(db, 'ideas'), ideaData)
+      // Si está logueado: guardar en Firestore
+      if (authStore.isLoggedIn) {
+        const docRef = await addDoc(collection(db, 'ideas'), ideaData)
+        
+        myIdeas.value.unshift({
+          id: docRef.id,
+          ...ideaData
+        } as StoredIdea)
 
-      // Actualizar lista de mis ideas
-      myIdeas.value.unshift({
-        id: docRef.id,
-        ...ideaData
-      } as StoredIdea)
+        // Incrementar contador diario
+        incrementDailyIdeasCount()
+      } else {
+        // Sin login: guardar solo en localStorage
+        const stored = localStorage.getItem('ideasAprobadas')
+        const ideas = stored ? JSON.parse(stored) : []
+        ideas.push(ideaTrimmed)
+        localStorage.setItem('ideasAprobadas', JSON.stringify(ideas))
 
-      // También guardar en localStorage
+        myIdeas.value.unshift({
+          id: `local_${Date.now()}`,
+          ...ideaData
+        } as StoredIdea)
+      }
+
       localStorage.setItem('lastIdeaSaveTime', Date.now().toString())
       lastIdeaSaveTime.value = Date.now()
 
@@ -329,8 +377,11 @@ export const useIdeasStore = defineStore('ideas', () => {
 
   // Cargar ideas desde Firestore
   const loadIdeasFromFirestore = async () => {
+    const { useAuthStore } = await import('./authStore')
     const authStore = useAuthStore()
     
+    loadDailyIdeasCount()
+
     if (!authStore.user) {
       loadIdeasFromLocalStorage()
       return
@@ -367,7 +418,7 @@ export const useIdeasStore = defineStore('ideas', () => {
         lastIdeaSaveTime.value = latestTime
       }
       
-      checkIfCanGenerateNewIdea()
+      await checkIfCanGenerateNewIdea()
     } catch (error) {
       console.error('Error cargando ideas:', error)
       loadIdeasFromLocalStorage()
@@ -376,7 +427,8 @@ export const useIdeasStore = defineStore('ideas', () => {
     }
   }
 
-  loadIdeasFromLocalStorage()
+  // Llamar una vez al inicializar
+  // loadIdeasFromLocalStorage()
 
   const discardIdea = () => {
     currentIdea.value = ''
@@ -384,8 +436,8 @@ export const useIdeasStore = defineStore('ideas', () => {
     appState.value = 'initial'
   }
 
-  // Agregar esta función antes del return
   const clearIdeas = async () => {
+    const { useAuthStore } = await import('./authStore')
     const authStore = useAuthStore()
     
     if (!confirm('¿Estás seguro de que quieres borrar todas las ideas?')) return
@@ -423,37 +475,111 @@ export const useIdeasStore = defineStore('ideas', () => {
     isListCollapsed.value = !isListCollapsed.value
   }
 
+  const uploadIdeaWithImage = async (file: File): Promise<boolean> => {
+    const { useAuthStore } = await import('./authStore')
+    const authStore = useAuthStore()
+    
+    if (!authStore.user) {
+      alert('Debes estar logueado para subir imágenes')
+      return false
+    }
+
+    if (!lastSavedIdea.value) {
+      alert('No hay idea guardada')
+      return false
+    }
+
+    try {
+      loading.value = true
+
+      const ideaToUpdate = myIdeas.value.find(idea => idea.idea === lastSavedIdea.value)
+      
+      // Validar que la idea no tenga ya una imagen
+      if (ideaToUpdate?.imageUrl) {
+        alert('Esta idea ya tiene una imagen. Solo puedes subir una imagen por idea.')
+        loading.value = false
+        return false
+      }
+
+      // 1. Subir imagen a Cloudinary
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', 'mideita_upload')
+
+      const response = await fetch(
+        'https://api.cloudinary.com/v1_1/dvfrbmxor/image/upload',
+        {
+          method: 'POST',
+          body: formData
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Error al subir a Cloudinary')
+      }
+
+      const data = await response.json()
+      const imageUrl = data.secure_url
+
+      // 2. Actualizar la idea guardada con la URL de la imagen
+      if (ideaToUpdate) {
+        await updateDoc(doc(db, 'ideas', ideaToUpdate.id), {
+          imageUrl: imageUrl
+        })
+
+        // Actualizar localmente
+        ideaToUpdate.imageUrl = imageUrl
+      }
+
+      alert('Imagen subida exitosamente')
+      return true
+
+    } catch (error) {
+      console.error('Error subiendo imagen:', error)
+      alert('Error al subir la imagen')
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
-  // Estado - Generación
-  currentIdea,
-  ideaSaved,
-  appState,
-  loading,
-  lastSavedIdea,
-  isListCollapsed,
-  lastIdeaSaveTime,
-  
-  // Estado - Computed (esto elimina los warnings)
-  canGenerateNewIdea,
-  getTimeUntilNextIdea,
-  getRecentIdeas,
-  
-  // Estado - Datos
-  myIdeas,
-  communityIdeas,
-  
-  // Métodos
-  generateIdea,
-  saveIdea,
-  loadMyIdeas,
-  loadCommunityIdeas,
-  loadIdeasFromFirestore,  // ← Esto elimina el warning
-  loadIdeasFromLocalStorage,
-  goToMyIdeas,
-  goToCommunity,
-  deleteIdea,
-  discardIdea,
-  clearIdeas,
-  toggleListCollapse,
-}
+    // Estados
+    currentIdea,
+    usedCombinations,
+    ideaSaved,
+    lastIdeaSaveTime,
+    appState,
+    isListCollapsed,
+    loading,
+    lastSavedIdea,
+    ideasGeneratedToday,
+    myIdeas,
+    communityIdeas,
+
+    // Computed
+    getTimeUntilNextIdea,
+    getRecentIdeas,
+    canGenerateNewIdea,
+
+    // Acciones
+    generateIdea,
+    saveIdea,
+    discardIdea,
+    goToMyIdeas,
+    goToCommunity,
+    deleteIdea,
+    clearIdeas,
+    toggleListCollapse,
+    loadMyIdeas,
+    loadCommunityIdeas,
+    loadIdeasFromLocalStorage,
+    loadIdeasFromFirestore,
+    uploadIdeaWithImage,
+
+    // Función de inicialización que llaman los componentes
+    initialize: () => {
+      loadIdeasFromLocalStorage()
+    }
+  }
 })

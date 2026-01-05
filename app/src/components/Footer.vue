@@ -2,11 +2,11 @@
 </script>
 
 <template>
-  <footer class="border-top mt-5 pt-4 pb-4">
+  <footer class="footer border-top p-2">
     <div class="container-fluid">
-      <div class="row">
+      <div class="row align-items-center">
         <div class="col-md-6">
-          <div class="bg-secondary rounded" style="width: 50px; height: 50px;"></div>
+          <img src="../assets/llamita02.png" class="img-fluid" style="width: auto; height: 90px;">
         </div>
         <div class="col-md-6 text-end">
           <p class="text-muted">Desarrollado por @JuampaCamarda</p>
@@ -19,5 +19,16 @@
 <style scoped>
 footer {
   background-color: #fff;
+}
+@media (max-width: 767px) {
+  .footer img {
+    display: block;
+    margin: auto;
+    width: 60px;
+  }
+  .col-md-6.text-end {
+    text-align: center !important;
+    margin-top: 10px;
+  }
 }
 </style>

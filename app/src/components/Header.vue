@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useAuthStore } from '../stores/authStore'
+import { useIdeasStore } from '../stores/ideaStore'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const ideaStore = useIdeasStore()
+const router = useRouter()
 const showUserMenu = ref(false)
 
 const handleLogin = async () => {
@@ -21,63 +25,120 @@ const handleLogout = async () => {
     console.error('Error en logout:', error)
   }
 }
+
+const goToGallery = () => {
+  router.push('/galeria')
+  showUserMenu.value = false
+}
+
+// Watcher para cargar ideas cuando cambia el estado de login
+watch(() => authStore.isLoggedIn, async (isLoggedIn) => {
+  if (isLoggedIn) {
+    console.log('🔄 Usuario logueado, cargando ideas desde Firestore...')
+    await ideaStore.loadIdeasFromFirestore()
+  } else {
+    console.log('🔄 Usuario deslogueado, cargando ideas desde localStorage...')
+    ideaStore.loadIdeasFromLocalStorage()
+  }
+})
 </script>
 
 <template>
   <header id="ideaHeader">
     <div class="container-fluid">
-      <nav class="ideaNav navbar">
-        <a href="#" @click.prevent class="navbar-brand ideaLogo">
-          <span>Mideita</span>
-        </a>
-        <ul class="nav">
-          <li class="nav-item">
-            <a href="#" class="nav-link" @click.prevent>Home</a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" @click.prevent>Qué es Mideita</a>
-          </li>
+      <nav class="navbar navbar-expand-lg">
+        <RouterLink to="/" class="navbar-brand ideaLogo">
+          <img src="../assets/logoheader.png" alt="" class="img-fluid">
+          <span class="d-none">Mideita</span>
+        </RouterLink>
+        
+        <!-- Botón hamburguesa para móvil -->
+        <button 
+          class="navbar-toggler" 
+          type="button" 
+          data-bs-toggle="collapse" 
+          data-bs-target="#navbarNav" 
+          aria-controls="navbarNav" 
+          aria-expanded="false" 
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-          <!-- Si NO está logueado: mostrar botón Login -->
-          <li class="nav-item" v-if="!authStore.isLoggedIn">
-            <button
-              class="nav-link btn btn-link"
-              @click="handleLogin"
-              :disabled="authStore.loading"
-            >
-              {{ authStore.loading ? 'Cargando...' : '🔐 Inicia Sesión' }}
-            </button>
-          </li>
+        <!-- Contenido colapsable -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <RouterLink to="/" class="nav-link">Home</RouterLink>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link" @click.prevent>Qué es Mideita</a>
+            </li>
+            <li class="nav-item">
+              <RouterLink to="/comunidad" class="nav-link">Explorar Ideas</RouterLink>
+            </li>
 
-          <!-- Si ESTÁ logueado: mostrar menú de usuario -->
-          <li class="nav-item dropdown" v-else>
-            <button
-              class="nav-link btn btn-link d-flex align-items-center gap-2"
-              @click="showUserMenu = !showUserMenu"
-            >
-              <span>👤 {{ authStore.user?.displayName?.split(' ')[0] }}</span>
-              <span>{{ showUserMenu ? '▲' : '▼' }}</span>
-            </button>
-
-            <!-- Menú desplegable -->
-            <div v-if="showUserMenu" class="dropdown-menu show">
-              <a href="#" class="dropdown-item" @click.prevent>
-                📧 {{ authStore.user?.email }}
-              </a>
-              <hr class="dropdown-divider">
-              <a href="#" class="dropdown-item" @click.prevent>
-                🔒 Mis Ideas
-              </a>
+            <!-- Si NO está logueado: mostrar botón Login -->
+            <li class="nav-item" v-if="!authStore.isLoggedIn">
               <button
-                class="dropdown-item text-danger w-100 text-start"
-                @click="handleLogout"
+                class="nav-link"
+                @click="handleLogin"
                 :disabled="authStore.loading"
+                style="color: blue;"
               >
-                {{ authStore.loading ? 'Cerrando sesión...' : '🚪 Logout' }}
+                <i class="fa-solid fa-lock"></i>
+                {{ authStore.loading ? 'Cargando...' : 'Inicia Sesión' }}
               </button>
-            </div>
-          </li>
-        </ul>
+            </li>
+
+            <!-- Si ESTÁ logueado: mostrar menú de usuario -->
+            <li class="nav-item dropdown" v-else>
+              <button
+                class="nav-link btn btn-link d-flex align-items-center gap-2 dropdown-toggle"
+                @click="showUserMenu = !showUserMenu"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <span><i class="fas fa-user"></i> {{ authStore.user?.displayName?.split(' ')[0] }}</span>
+                <i :class="showUserMenu ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+              </button>
+
+              <!-- Menú desplegable -->
+              <ul class="dropdown-menu" :class="{ show: showUserMenu }">
+                <li>
+                  <a href="#" class="dropdown-item" @click.prevent>
+                    <i class="fas fa-envelope"></i> {{ authStore.user?.email }}
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+            <li>
+                  <a
+                    href="#"
+                    class="dropdown-item"
+                    @click.prevent="goToGallery"
+                  >
+                    <i class="fas fa-image"></i> Mi Galería
+                  </a>
+                </li>
+                <li>
+                  <Router-link to="/admin-ideas" class="dropdown-item">
+                    <i class="fas fa-list"></i> Ideas Guardadas
+                  </Router-link>
+                </li>
+                <li>
+                  <button
+                    class="dropdown-item text-danger w-100 text-start"
+                    @click="handleLogout"
+                    :disabled="authStore.loading"
+                  >
+                    <i class="fas fa-door-open"></i>
+                    {{ authStore.loading ? 'Cerrando sesión...' : ' Logout' }}
+                  </button>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
       </nav>
     </div>
   </header>
@@ -88,12 +149,15 @@ const handleLogout = async () => {
 #ideaHeader {
   background-color: #fff;
   border-bottom: 1px solid #ddd;
-  padding: 0.5rem 0;
 }
 
 .navbar-brand {
   font-weight: bold;
   cursor: pointer;
+}
+
+.navbar-brand img {
+  height: 80px;
 }
 
 .nav-link{

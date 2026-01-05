@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import Header from './components/Header.vue'
-import IdeaGenerator from './components/IdeaGenerator.vue'
 import Footer from './components/Footer.vue'
 </script>
 
 <template>
   <div class="d-flex flex-column min-vh-100">
     <Header />
-    <main class="flex-grow-1">
-    <IdeaGenerator />
+    <main id="IdeaWrapper" class="flex-grow-1">
+      <RouterView />
     </main>
     <Footer />
   </div>
@@ -23,7 +22,8 @@ body {
   min-height: 100vh;
 }
 
-.flex-grow-1 {
+#IdeaWrapper {
   flex: 1;
+  min-height:calc(100dvh - 230px);
 }
 </style>

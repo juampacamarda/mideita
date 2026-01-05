@@ -58,10 +58,10 @@ const deleteSelected = () => {
     <!-- Botón de borrado múltiple -->
     <div v-if="showBulkDelete && selectedIdeas.size > 0" class="mb-3">
       <button 
-        class="btn btn-sm btn-danger rounded-pill"
+        class="btn btn-danger"
         @click="deleteSelected"
       >
-        🗑️ Borrar seleccionadas ({{ selectedIdeas.size }})
+        <i class="fas fa-trash"></i> Borrar seleccionadas ({{ selectedIdeas.size }})
       </button>
     </div>
 
@@ -87,11 +87,23 @@ const deleteSelected = () => {
             class="rounded-pill text-white d-flex align-items-center justify-content-center flex-shrink-0" 
             style="background-color: #FF9500; width: 40px; height: 40px;"
           >
-            ✓
+            <i class="fas fa-check"></i>
           </div>
 
           <!-- Texto de la idea -->
-          <span class="flex-grow-1">{{ idea.idea }}</span>
+          <div class="flex-grow-1 d-flex align-items-center gap-2">
+            <span 
+              v-if="showBulkDelete && idea.imageUrl" 
+              class="text-primary" 
+              title="Esta idea tiene imagen asociada"
+            >
+              <i class="fas fa-image"></i>
+            </span>
+
+            <span>{{ idea.idea }}</span>
+            <!-- Emoji de imagen - solo se muestra en showBulkDelete -->
+            
+          </div>
 
           <!-- Botón de borrar individual -->
           <button 
@@ -100,7 +112,7 @@ const deleteSelected = () => {
             @click="emit('deleteIdea', index)"
             title="Borrar esta idea"
           >
-            🗑️
+            <i class="fas fa-trash"></i>
           </button>
         </div>
       </div>
@@ -109,19 +121,19 @@ const deleteSelected = () => {
     <!-- Paginación -->
     <div v-if="showPagination && totalPages > 1" class="d-flex justify-content-center gap-2 mt-3">
       <button 
-        class="btn btn-sm btn-outline-secondary"
+        class="btn btn-outline-secondary"
         :disabled="currentPage === 1"
         @click="currentPage--"
       >
-        ← Anterior
+        <i class="fas fa-arrow-left"></i> Anterior
       </button>
       <span class="align-self-center">{{ currentPage }} / {{ totalPages }}</span>
       <button 
-        class="btn btn-sm btn-outline-secondary"
+        class="btn btn-outline-secondary"
         :disabled="currentPage === totalPages"
         @click="currentPage++"
       >
-        Siguiente →
+        Siguiente <i class="fas fa-arrow-right"></i>
       </button>
     </div>
   </div>
