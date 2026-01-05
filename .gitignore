@@ -38,3 +38,6 @@ out/
 # IDE
 *.sublime-project
 *.sublime-workspace
+
+# Firebase
+app/serviceAccountKey.json
