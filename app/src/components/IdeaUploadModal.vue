@@ -9,7 +9,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   close: []
-  upload: [file: File]
+  upload: [file: File, done?: (success: boolean) => void]
 }>()
 
 const fileInput = ref<HTMLInputElement>()
@@ -49,10 +49,14 @@ const handleUpload = async () => {
     alert('Selecciona una imagen')
     return
   }
-  
+
   loading.value = true
   try {
-    emit('upload', selectedFile.value)
+    await new Promise<void>((resolve) => {
+      emit('upload', selectedFile.value as File, (/* success?: boolean */) => {
+        resolve()
+      })
+    })
   } finally {
     loading.value = false
   }
@@ -72,7 +76,7 @@ const handleClose = () => {
   <div v-if="show" class="modal-overlay" @click="handleClose">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
-        <h5>📤 Subir imagen de la idea</h5>
+        <h5><i class="fas fa-upload"></i> Subir imagen de la idea</h5>
         <button class="btn-close" @click="handleClose">✕</button>
       </div>
       
@@ -95,7 +99,7 @@ const handleClose = () => {
           
           <!-- Si no hay preview -->
           <div v-if="!preview" class="upload-placeholder" @click="fileInput?.click()">
-            <p>📸 Haz click o arrastra una imagen aquí</p>
+            <p><i class="fas fa-images"></i> Haz click o arrastra una imagen aquí</p>
             <small class="text-muted">Máximo 5MB - JPG, PNG, WebP</small>
           </div>
           
@@ -127,7 +131,8 @@ const handleClose = () => {
             @click="handleUpload"
             :disabled="!selectedFile || loading"
           >
-            {{ loading ? '⏳ Subiendo...' : '✅ Subir imagen' }}
+            <i class="fas fa-upload"></i>
+            {{ loading ? 'Subiendo...' : 'Subir imagen' }}
           </button>
         </div>
       </div>

@@ -74,9 +74,13 @@ const formatDateTime = (date: any) => {
           />
           <div class="card-body">
             <p class="card-text text-truncate idea-preview">{{ idea.idea }}</p>
-            <small class="text-muted">
+            <small class="text-muted idea-date">
               {{ formatDate(idea.createdAt) }}
             </small>
+            <small class="text-muted idea-author">
+              &nbsp;|&nbsp; {{ idea.authorName || idea.userEmail || 'Anónimo' }}
+            </small>
+
           </div>
         </div>
       </div>
@@ -124,6 +128,8 @@ const formatDateTime = (date: any) => {
           </div>
           <p class="text-muted">
             <small>Subida: {{ formatDateTime(selectedIdea.createdAt) }}</small>
+            <br />
+            <small>Por: {{ selectedIdea.authorName || selectedIdea.userEmail || 'Anónimo' }}</small>
           </p>
         </div>
         <div class="modal-footer">

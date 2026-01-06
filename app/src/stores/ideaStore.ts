@@ -10,6 +10,7 @@ export interface StoredIdea {
   idea: string
   userId: string
   userEmail: string
+  authorName: string
   imageUrl?: string
   createdAt: Date
 }
@@ -313,6 +314,7 @@ export const useIdeasStore = defineStore('ideas', () => {
         idea: ideaTrimmed,
         userId: authStore.user?.uid || 'guest',
         userEmail: authStore.user?.email || 'guest@example.com',
+        authorName: authStore.user?.displayName || authStore.user?.email || 'Anónimo',
         imageUrl: imageUrl || null,
         createdAt: new Date()
       }

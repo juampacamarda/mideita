@@ -102,12 +102,13 @@ const extractAccion = (idea: string) => {
 const showUploadModal = ref(false)
 const uploadSuccess = ref(false)
 
-const handleUploadIdea = async (file: File) => {
+const handleUploadIdea = async (file: File, done?: (success: boolean) => void) => {
   const success = await ideaStore.uploadIdeaWithImage(file)
   if (success) {
     showUploadModal.value = false
     uploadSuccess.value = true
   }
+  if (done) done(Boolean(success))
 }
 
 const resetUploadSuccess = () => {
@@ -296,26 +297,27 @@ const resetUploadSuccess = () => {
               class="btn btn-sm btn-outline-success"
               @click="resetUploadSuccess"
             >
-              <i class="fas fa-time"></i>
+              <i class="fas fa-times"></i>
             </button>
           </div>
 
           <!-- Botones: mostrar solo si NO hay mensaje de éxito -->
           <div v-if="!uploadSuccess" class="d-flex flex-wrap gap-3 justify-content-center mt-4">
             <button 
-              v-if="authStore.isLoggedIn"
+              v-if="authStore.isLoggedIn && !uploadSuccess && !(ideaStore.myIdeas.find(i => i.idea === ideaStore.lastSavedIdea)?.imageUrl)"
               class="btn btn-lg rounded-pill text-white"
               style="background-color: #FF9500; border: none; padding: 12px 30px; font-size: 18px;"
               @click="showUploadModal = true"
               :disabled="ideaStore.loading"
             >
-              {{ ideaStore.loading ? '⏳ Subiendo...' : '📤 Subir idea' }}
+              <i class="fas fa-cloud-upload-alt"></i>
+              {{ ideaStore.loading ? ' Subiendo...' : ' Subir idea' }}
             </button>
 
             <button 
               class="btn btn-lg text-white"
               style="background-color: #ccc; border: none; padding: 12px 30px; font-size: 18px;"
-              @click="goBack"
+              @click="ideaStore.appState = 'initial'"
             >
               <i class="fas fa-arrow-left"></i> Atrás
             </button>
