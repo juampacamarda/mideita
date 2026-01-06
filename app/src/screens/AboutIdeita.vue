@@ -31,10 +31,15 @@ const goBack = () => {
           </div>
           <div class="col-md-8 d-flex flex-column align-items-center">
             <p class="about"> Mideita te ayuda a encontrar ideas creativas y divertidas en segundos. Con un clic generas combinaciones originales (animal + caracterización + acción), las guardas si te gustan y puedes subir imágenes para acompañarlas. 
-              <br><br> <strong>Inspirado en nuestra fauna autóctona:</strong> usamos animales emblemáticos de Argentina —llamas, yaguaretés, carpinchos, tucanes y muchas especies más— para darle identidad y color local a cada idea. Cada combinación celebra nuestra naturaleza y te invita a imaginar con sabor propio. 
-              <br><br> <strong>Perfecto para ilustradores:</strong> si eres ilustrador o amante del diseño, Mideita es una herramienta pensada para disparar tu creatividad: genera personajes, escenas y retos visuales en segundos para que los desarrolles como bocetos, series o proyectos personales. 
-              <br><br> Usa el botón "Generar idea" para inspirarte, guarda las que prefieras y explora tu galería personal o la comunidad para ver ideas de otros usuarios. Inicia sesión con Google para sincronizar tus ideas entre dispositivos; si no quieres, las ideas también se guardan localmente en tu navegador. 
-              <br><br> Es una herramienta pensada para jugar, crear y compartir — simple, rápida y lista para inspirarte. ¡A generar! </p>
+              <br><br> Inspirado en nuestra fauna autóctona: usamos animales emblemáticos de Argentina —llamas, yaguaretés, carpinchos, tucanes y muchas especies más— para darle identidad y color local a cada idea. Cada combinación celebra nuestra naturaleza y te invita a imaginar con sabor propio. 
+              <br><br> Perfecto para ilustradores: si eres ilustrador o amante del diseño, Mideita es una herramienta pensada para disparar tu creatividad: genera personajes, escenas y retos visuales en segundos para que los desarrolles como bocetos, series o proyectos personales.
+               <br><br> Para subir imágenes a una idea debes iniciar sesión con Google. 
+               <br><br> Usa el botón "Generar idea" para inspirarte, guarda las que prefieras y explora tu galería personal o la comunidad para ver ideas de otros usuarios. Inicia sesión con Google para sincronizar tus ideas entre dispositivos; si no quieres, las ideas también se guardan localmente en tu navegador. 
+               <br><br> Es una herramienta pensada para jugar, crear y compartir — simple, rápida y lista para inspirarte. ¡A generar! 
+          
+          </p>
+
+
 
 
           </div>
