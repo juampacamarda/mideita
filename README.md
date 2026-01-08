@@ -61,6 +61,7 @@ app/
 ├── serviceAccountKey.json    # Credenciales Firebase Admin
 ├── .env.local                # Variables de entorno
 └── package.json
+```
 
 
 ## 🚀 Instalación
