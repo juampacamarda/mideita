@@ -35,33 +35,33 @@
 | **Imágenes** | Cloudinary |
 
 ## 📁 Estructura del proyecto
-
-
+```text
 app/
 ├── src/
-│ ├── components/ # Componentes reutilizables
-│ │ ├── Header.vue # Navbar responsivo con menú usuario
-│ │ ├── Footer.vue # Footer
-│ │ ├── IdeaList.vue # Listado de ideas con paginación
-│ │ └── ...
-│ ├── screens/ # Vistas principales
-│ │ ├── IdeaGenerator.vue # Pantalla principal
-│ │ ├── UserIdeaList.vue # Mis ideas
-│ │ ├── UserGallery.vue # Mi galería
-│ │ ├── GlobalGallery.vue # Galería comunidad
-│ │ └── AboutIdeita.vue # About
-│ ├── stores/ # Pinia stores
-│ │ ├── authStore.ts # Autenticación
-│ │ ├── ideaStore.ts # Lógica de ideas
-│ │ └── firebase.ts # Configuración Firebase
-│ ├── App.vue # Componente raíz
-│ ├── router.ts # Rutas
-│ └── main.ts # Entrada
+│   ├── components/           # Componentes reutilizables
+│   │   ├── Header.vue        # Navbar responsivo con menú usuario
+│   │   ├── Footer.vue        # Footer
+│   │   ├── IdeaList.vue      # Listado de ideas con paginación
+│   │   └── ...
+│   ├── screens/              # Vistas principales
+│   │   ├── IdeaGenerator.vue # Pantalla principal
+│   │   ├── UserIdeaList.vue  # Mis ideas
+│   │   ├── UserGallery.vue   # Mi galería
+│   │   ├── GlobalGallery.vue # Galería comunidad
+│   │   └── AboutIdeita.vue   # About
+│   ├── stores/               # Pinia stores
+│   │   ├── authStore.ts      # Autenticación
+│   │   ├── ideaStore.ts      # Lógica de ideas
+│   │   └── firebase.ts       # Configuración Firebase
+│   ├── App.vue               # Componente raíz
+│   ├── router.ts             # Rutas
+│   └── main.ts               # Entrada
 ├── scripts/
-│ └── cleanupCloudinaryImages.cjs # Script limpieza de imágenes
-├── serviceAccountKey.json # Credenciales Firebase Admin
-├── .env.local # Variables de entorno
+│   └── cleanupCloudinaryImages.cjs # Script limpieza de imágenes
+├── serviceAccountKey.json    # Credenciales Firebase Admin
+├── .env.local                # Variables de entorno
 └── package.json
+
 
 ## 🚀 Instalación
 
