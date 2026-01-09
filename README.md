@@ -9,6 +9,7 @@
 - **Regeneración**: Genera nuevas combinaciones sin límite
 - **Persistencia**: Guarda ideas para usuarios autenticados y localmente para invitados
 - **Restricción 24h**: Usuarios no autenticados pueden generar 1 idea cada 24h
+- **Generación sin límites**: Usuarios invitados pueden generar ideas sin restricción de tiempo ya que se guardan solo en localStorage sin impacto en la BD ni en el tráfico de red.
 
 ### Gestión de ideas
 - **Mi lista**: Visualiza todas tus ideas guardadas
@@ -147,7 +148,7 @@ npm run cleanup:images
 - Generación aleatoria de ideas
 - Guardado con imagen opcional
 - Máquina de estados UI: `initial` → `generated` → `thankYou` → `myIdeas`
-- Contador de ideas por día
+- Contador de ideas por día (solo usuarios autenticados, máximo 10/día)
 - Restricción de 24h para usuarios invitados
 
 #### **UserIdeaList.vue**

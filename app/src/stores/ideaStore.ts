@@ -228,7 +228,7 @@ export const useIdeasStore = defineStore('ideas', () => {
   })
 
   const getRecentIdeas = computed(() => {
-    return myIdeas.value.slice(-7).reverse()
+    return myIdeas.value.slice(0, 7)
   })
 
   const canGenerateNewIdea = computed(() => {
@@ -349,6 +349,11 @@ export const useIdeasStore = defineStore('ideas', () => {
       lastSavedIdea.value = ideaTrimmed
       ideaSaved.value = true
       appState.value = 'thankYou'
+
+      // Después de guardar exitosamente, recarga las ideas para sincronizar
+      if (authStore.isLoggedIn) {
+        await loadMyIdeas()
+      }
     } catch (error) {
       console.error('Error guardando idea:', error)
       alert('Error al guardar la idea.')
