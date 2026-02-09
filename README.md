@@ -8,8 +8,10 @@
 - **Combinaciones únicas**: Mezcla aleatoria de animales sudamericanos + roles + acciones
 - **Regeneración**: Genera nuevas combinaciones sin límite
 - **Persistencia**: Guarda ideas para usuarios autenticados y localmente para invitados
-- **Restricción 24h**: Usuarios no autenticados pueden generar 1 idea cada 24h
-- **Generación sin límites**: Usuarios invitados pueden generar ideas sin restricción de tiempo ya que se guardan solo en localStorage sin impacto en la BD ni en el tráfico de red.
+- **Sin restricción para invitados**: Los usuarios no autenticados pueden generar ideas ilimitadamente (se guardan solo en localStorage)
+- **Límite diario para usuarios**: Los usuarios autenticados pueden generar máximo 10 ideas por día
+- **Sin restricción para invitados**: Los usuarios no autenticados pueden generar ideas ilimitadamente (se guardan solo en localStorage)
+- **Límite diario para usuarios**: Los usuarios autenticados pueden generar máximo 10 ideas por día
 
 ### Gestión de ideas
 - **Mi lista**: Visualiza todas tus ideas guardadas
@@ -62,7 +64,7 @@ app/
 ├── serviceAccountKey.json    # Credenciales Firebase Admin
 ├── .env.local                # Variables de entorno
 └── package.json
-```
+```fire
 
 
 ## 🚀 Instalación
@@ -147,9 +149,9 @@ npm run cleanup:images
 #### **IdeaGenerator.vue**
 - Generación aleatoria de ideas
 - Guardado con imagen opcional
-- Máquina de estados UI: `initial` → `generated` → `thankYou` → `myIdeas`
+- Estados disponibles: `initial` → `generated` → `thankYou` → `myIdeas` | `community` | `userGallery`
 - Contador de ideas por día (solo usuarios autenticados, máximo 10/día)
-- Restricción de 24h para usuarios invitados
+- Sin restricciones de tiempo para usuarios invitados
 
 #### **UserIdeaList.vue**
 - Listado de ideas del usuario actual
@@ -170,6 +172,12 @@ npm run cleanup:images
 - Checkboxes para selección múltiple
 - Indicadores de imágenes
 - Botones de acción
+
+#### **Sistema de eliminación diferenciado**
+- **Usuarios invitados**: Eliminación directa de localStorage usando IDs que empiezan con `local_`
+- **Usuarios autenticados**: Eliminación de Firestore con cleanup automático de imágenes
+- **Eliminación múltiple**: Soporte para selección y borrado en lote
+- **Limpieza de imágenes**: Al eliminar ideas con imágenes, se marcan automáticamente para limpieza posterior
 
 ## 🔐 Seguridad
 
@@ -300,8 +308,9 @@ El proyecto está en fase MVP. Sugerencias:
 **Acciones**: comprando en supermercado, tocando guitarra, escalando montaña...
 
 ### Límites actuales
-- 10 ideas/día (usuarios autenticados)
-- 50 ideas máximo guardadas
+- 10 ideas/día (usuarios autenticados únicamente)
+- 50 ideas máximo guardadas (usuarios autenticados)
+- Sin límites para usuarios invitados (localStorage)
 - 1 imagen por idea
 - Máximo 25GB almacenamiento Cloudinary (plan gratuito)
 
