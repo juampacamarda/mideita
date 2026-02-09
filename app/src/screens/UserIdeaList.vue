@@ -16,30 +16,23 @@ const goBack = () => {
 // Cargar las ideas del usuario cuando se monta el componente
 onMounted(async () => {
   if (authStore.isLoggedIn) {
-    await ideaStore.loadMyIdeas() // Cargar TODAS las ideas del usuario
+    await ideaStore.loadMyIdeas()
   } else {
     ideaStore.loadIdeasFromLocalStorage()
   }
 })
 
-// Manejar borrado individual
-const handleDeleteIdea = async (index: number) => {
-  const idea = ideaStore.myIdeas[index]
+// ✅ CAMBIO: Recibir ideaId en lugar de índice
+const handleDeleteIdea = async (ideaId: string) => {
+  const idea = ideaStore.myIdeas.find(i => i.id === ideaId)
   if (idea && confirm('¿Estás seguro de que quieres eliminar esta idea?')) {
-    await ideaStore.deleteIdea(idea.id)
+    await ideaStore.deleteIdea(ideaId)
   }
 }
 
-// Manejar borrado múltiple
-const handleDeleteSelected = async (indices: number[]) => {
-  if (confirm(`¿Estás seguro de que quieres eliminar ${indices.length} ideas?`)) {
-    // Obtener los IDs de las ideas seleccionadas, filtrando las que existen
-    const ideaIds = indices
-      .map(index => ideaStore.myIdeas[index])
-      .filter(idea => idea !== undefined)
-      .map(idea => idea.id)
-    
-    // Borrar una por una
+// ✅ CAMBIO: Recibir array de IDs en lugar de índices
+const handleDeleteSelected = async (ideaIds: string[]) => {
+  if (confirm(`¿Estás seguro de que quieres eliminar ${ideaIds.length} ideas?`)) {
     for (const ideaId of ideaIds) {
       await ideaStore.deleteIdea(ideaId)
     }
@@ -106,7 +99,5 @@ const handleDeleteSelected = async (indices: number[]) => {
   </div>
 </template>
 
-
 <style>
-
 </style>

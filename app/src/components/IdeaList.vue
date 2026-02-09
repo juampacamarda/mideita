@@ -3,11 +3,11 @@ import { ref, computed } from 'vue'
 import type { StoredIdea } from '../stores/ideaStore'
 
 interface Props {
-  ideas: StoredIdea[]  // ← Cambiar de string[] a StoredIdea[]
-  maxDisplay?: number        // Cuántas ideas mostrar por página
-  showDelete?: boolean       // Mostrar botón de borrar individual
-  showBulkDelete?: boolean   // Mostrar checkbox para selección múltiple
-  showPagination?: boolean   // Mostrar paginación
+  ideas: StoredIdea[]
+  maxDisplay?: number
+  showDelete?: boolean
+  showBulkDelete?: boolean
+  showPagination?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -18,12 +18,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  deleteIdea: [index: number]
-  deleteSelected: [indices: number[]]
+  deleteIdea: [ideaId: string]
+  deleteSelected: [ideaIds: string[]]
 }>()
 
 const currentPage = ref(1)
-const selectedIdeas = ref<Set<number>>(new Set())
+const selectedIdeas = ref<Set<string>>(new Set())
 
 const totalPages = computed(() => 
   Math.ceil(props.ideas.length / props.maxDisplay)
@@ -35,11 +35,11 @@ const paginatedIdeas = computed(() => {
   return props.ideas.slice(start, end)
 })
 
-const toggleSelection = (index: number) => {
-  if (selectedIdeas.value.has(index)) {
-    selectedIdeas.value.delete(index)
+const toggleSelection = (ideaId: string) => {
+  if (selectedIdeas.value.has(ideaId)) {
+    selectedIdeas.value.delete(ideaId)
   } else {
-    selectedIdeas.value.add(index)
+    selectedIdeas.value.add(ideaId)
   }
 }
 
@@ -68,8 +68,8 @@ const deleteSelected = () => {
     <!-- Lista de ideas -->
     <div class="list-group">
       <div 
-        v-for="(idea, index) in paginatedIdeas" 
-        :key="index" 
+        v-for="idea in paginatedIdeas" 
+        :key="idea.id"
         class="list-group-item border-0 border-bottom py-3"
       >
         <div class="d-flex align-items-center gap-3">
@@ -77,8 +77,8 @@ const deleteSelected = () => {
           <input 
             v-if="showBulkDelete"
             type="checkbox"
-            :checked="selectedIdeas.has(index)"
-            @change="toggleSelection(index)"
+            :checked="selectedIdeas.has(idea.id)"
+            @change="toggleSelection(idea.id)"
             class="form-check-input"
           />
 
@@ -99,17 +99,14 @@ const deleteSelected = () => {
             >
               <i class="fas fa-image"></i>
             </span>
-
             <span>{{ idea.idea }}</span>
-            <!-- Emoji de imagen - solo se muestra en showBulkDelete -->
-            
           </div>
 
           <!-- Botón de borrar individual -->
           <button 
             v-if="showDelete"
             class="btn btn-sm btn-outline-danger"
-            @click="emit('deleteIdea', index)"
+            @click="emit('deleteIdea', idea.id)"
             title="Borrar esta idea"
           >
             <i class="fas fa-trash"></i>

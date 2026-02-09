@@ -66,7 +66,7 @@ const acciones = [
 ]
 
 // Modo desarrollo: cambiar a true para saltarse la restricción de 24h
-const SKIP_24H_RESTRICTION = true
+// const SKIP_24H_RESTRICTION = true
 
 export const useIdeasStore = defineStore('ideas', () => {
   // Estado para generación de ideas
@@ -184,69 +184,30 @@ export const useIdeasStore = defineStore('ideas', () => {
     const { useAuthStore } = await import('./authStore')
     const authStore = useAuthStore()
     
-    if (authStore.isLoggedIn) {
+    // Invitados: sin restricción 24h
+    if (!authStore.isLoggedIn) {
       appState.value = 'initial'
       return
     }
-
-    if (lastIdeaSaveTime.value === 0) {
-      appState.value = 'initial'
-      return
-    }
-
-    if (SKIP_24H_RESTRICTION) {
-      appState.value = 'initial'
-      return
-    }
-
-    const now = Date.now()
-    const twentyFourHoursMs = 24 * 60 * 60 * 1000
-    const timeSinceLastIdea = now - lastIdeaSaveTime.value
-
-    if (timeSinceLastIdea >= twentyFourHoursMs) {
-      appState.value = 'initial'
-    } else {
-      appState.value = 'initial'
-    }
+    
+    // Usuarios logueados: solo validan limite diario (10/día) en saveIdea()
+    appState.value = 'initial'
   }
 
-  const getTimeUntilNextIdea = computed(() => {
-    if (lastIdeaSaveTime.value === 0) return ''
-    
-    const now = Date.now()
-    const twentyFourHoursMs = 24 * 60 * 60 * 1000
-    const timeSinceLastIdea = now - lastIdeaSaveTime.value
-    const timeRemaining = twentyFourHoursMs - timeSinceLastIdea
-
-    if (timeRemaining <= 0) return ''
-
-    const hours = Math.floor(timeRemaining / (60 * 60 * 1000))
-    const minutes = Math.floor((timeRemaining % (60 * 60 * 1000)) / (60 * 1000))
-    const seconds = Math.floor((timeRemaining % (60 * 1000)) / 1000)
-
-    return `En ${hours}h ${minutes}min ${seconds}seg podrás generar una nueva idea!`
-  })
-
-  const getRecentIdeas = computed(() => {
-    return myIdeas.value.slice(0, 7)
-  })
-
   const canGenerateNewIdea = computed(() => {
-    // No podemos usar authStore aquí porque es síncrono, usar auth directamente
     const currentUser = auth.currentUser
     
-    // Los usuarios logueados siempre pueden generar (hasta el límite diario)
+    // Usuarios logueados: limitan a 10/día
     if (currentUser) {
       return ideasGeneratedToday.value < 10
     }
     
-    if (lastIdeaSaveTime.value === 0) return true
-    
-    const now = Date.now()
-    const twentyFourHoursMs = 24 * 60 * 60 * 1000
-    const timeSinceLastIdea = now - lastIdeaSaveTime.value
-    
-    return timeSinceLastIdea >= twentyFourHoursMs || SKIP_24H_RESTRICTION
+    // Invitados: siempre pueden generar
+    return true
+  })
+
+  const getRecentIdeas = computed(() => {
+    return myIdeas.value.slice(0, 7)
   })
 
   const generateIdea = (forceNew = false) => {
@@ -543,24 +504,41 @@ export const useIdeasStore = defineStore('ideas', () => {
     }
   }
 
-  // SECCIÓN 2: Actualizar deleteIdea para usar tags
+  // SECCIÓN 2: Actualizar deleteIdea para manejar invitados (localStorage) y usuarios (Firestore)
   const deleteIdea = async (ideaId: string) => {
     try {
-      // 1. Obtener la idea para obtener el ideaId
+      // 1. Obtener la idea a borrar
       const ideaToDelete = myIdeas.value.find(idea => idea.id === ideaId)
       
-      // 2. Si tiene imagen, registrar para limpieza posterior
-      if (ideaToDelete?.imageUrl) {
-        console.log(`🗑️ Imagen marcada para limpieza (tag: idea_${ideaId})`)
-        // La Cloud Function de Firebase se encargará de eliminar
-        // todas las imágenes etiquetadas con idea_${ideaId} de Cloudinary
+      // 2. Verificar si es un ID local (invitado)
+      if (ideaId.startsWith('local_')) {
+        // INVITADOS: Borrar de localStorage
+        const stored = localStorage.getItem('ideasAprobadas')
+        if (stored) {
+          const ideas = JSON.parse(stored)
+          // Filtrar la idea por su texto exacto
+          const updatedIdeas = ideas.filter((idea: string) => idea !== ideaToDelete?.idea)
+          localStorage.setItem('ideasAprobadas', JSON.stringify(updatedIdeas))
+        }
+        
+        // Actualizar array local
+        myIdeas.value = myIdeas.value.filter(idea => idea.id !== ideaId)
+        console.log('✅ Idea de invitado eliminada de localStorage')
+      } else {
+        // USUARIOS LOGUEADOS: Borrar de Firestore
+        // Si tiene imagen, registrar para limpieza posterior
+        if (ideaToDelete?.imageUrl) {
+          console.log(`🗑️ Imagen marcada para limpieza (tag: idea_${ideaId})`)
+          // La Cloud Function de Firebase se encargará de eliminar
+          // todas las imágenes etiquetadas con idea_${ideaId} de Cloudinary
+        }
+        
+        // Borrar la idea de Firestore
+        await deleteDoc(doc(db, 'ideas', ideaId))
+        myIdeas.value = myIdeas.value.filter(idea => idea.id !== ideaId)
+        
+        console.log('✅ Idea eliminada correctamente (imagen se limpiará en 24h)')
       }
-      
-      // 3. Borrar la idea de Firestore
-      await deleteDoc(doc(db, 'ideas', ideaId))
-      myIdeas.value = myIdeas.value.filter(idea => idea.id !== ideaId)
-      
-      console.log('✅ Idea eliminada correctamente (imagen se limpiará en 24h)')
     } catch (error) {
       console.error('❌ Error eliminando idea:', error)
       alert('Error al eliminar la idea.')
@@ -582,7 +560,7 @@ export const useIdeasStore = defineStore('ideas', () => {
     communityIdeas,
 
     // Computed
-    getTimeUntilNextIdea,
+    // getTimeUntilNextIdea,
     getRecentIdeas,
     canGenerateNewIdea,
 

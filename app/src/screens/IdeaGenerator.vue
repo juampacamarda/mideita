@@ -121,18 +121,19 @@ const resetUploadSuccess = () => {
     <div class="row justify-content-center">
       <div class="col-md-8">
 
-        <!-- PASO 01: Estado inicial - Solo botón generar (o deshabilitado si esperando 24h) -->
+        <!-- PASO 01: Estado inicial - Solo botón generar -->
         <div v-if="ideaStore.appState === 'initial'" class="text-center" style="min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;">
-          <div v-if="!authStore.isLoggedIn && ideaStore.lastIdeaSaveTime > 0 && !ideaStore.canGenerateNewIdea" class="alert alert-warning w-100 mb-4">
-            <p class="mb-0">⏳ Debes esperar para generar otra idea</p>
-            <p class="text-muted mb-0">{{ ideaStore.getTimeUntilNextIdea }}</p>
+          <!-- Mostrar mensaje de límite diario para usuarios logueados -->
+          <div v-if="authStore.isLoggedIn && !ideaStore.canGenerateNewIdea" class="alert alert-warning w-100 mb-4">
+            <p class="mb-0">⚠️ Has alcanzado el límite diario</p>
+            <p class="text-muted mb-0">Puedes generar hasta 10 ideas por día. Vuelve mañana para más ideas.</p>
           </div>
 
           <button 
             class="btn text-white btn-principalIdeaBtn"
             style="background-color: #FF9500; border: none; padding: 12px 30px; font-size: 18px;"
             @click="() => ideaStore.generateIdea(false)"
-            :disabled="!authStore.isLoggedIn && ideaStore.lastIdeaSaveTime > 0 && !ideaStore.canGenerateNewIdea"
+            :disabled="!ideaStore.canGenerateNewIdea"
           >
             <img src="../assets/llamita02.png" alt="" class="img-fluid">
             <span> Generar idea </span>
